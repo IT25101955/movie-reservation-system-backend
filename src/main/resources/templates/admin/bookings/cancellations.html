@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Cancellation Requests | CineMax</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/admin-sidebar.css}">
+</head>
+<body class="bg-light">
+<div class="admin-layout">
+<button type="button" id="adminMenuButton" class="admin-menu-button">☰</button>
+<div th:replace="~{fragments/admin-sidebar :: sidebar('bookings')}"></div>
+<main class="admin-main-content">
+<button type="button" id="adminMenuButton" class="admin-menu-button">☰</button>
+<div th:replace="~{fragments/admin-sidebar :: sidebar('cancellations')}"></div>
+<main class="container py-5 admin-main-content">
+    <div class="d-flex justify-content-between align-items-center">
+        <h2>🎟 Cancellation Requests</h2>
+        <div>
+            <a th:href="@{/admin/bookings}" class="btn btn-secondary">All Bookings</a>
+            <a th:href="@{/admin/dashboard}" class="btn btn-dark">Dashboard</a>
+        </div>
+    </div>
+    
+    <div th:if="${success}" class="alert alert-success mt-3" th:text="${success}">
+      Action completed successfully.
+    </div>
+    
+    <div th:if="${error}" class="alert alert-danger mt-3" th:text="${error}"></div>
+
+    <div class="table-responsive mt-4">
+        <table class="table table-hover bg-white shadow-sm align-middle">
+            <thead><tr><th>Booking Ref</th><th>Customer</th><th>Reason</th><th>Requested At</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+            <tr th:each="request : ${requests}">
+                <td><a th:href="@{/admin/bookings/{id}(id=${request.booking.id})}" th:text="${request.booking.bookingReference}"></a></td>
+                <td><span th:text="${request.booking.user.fullName}"></span><br><small th:text="${request.booking.user.email}"></small></td>
+                <td th:text="${request.reason}"></td>
+                <td th:text="${#temporals.format(request.requestedAt, 'dd-MM-yyyy HH:mm')}"></td>
+                <td th:text="${request.status}"></td>
+                <td>
+                    <div th:if="${request.status.name() == 'PENDING'}">
+                        <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" th:data-bs-target="'#approveModal' + ${request.id}">Approve</button>
+                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" th:data-bs-target="'#rejectModal' + ${request.id}">Reject</button>
+                    </div>
+                    
+                    <!-- Approve Modal -->
+                    <div class="modal fade" th:id="'approveModal' + ${request.id}" tabindex="-1">
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form class="approve-refund-form" th:action="@{/admin/bookings/cancellations/{id}/approve(id=${request.id})}" method="post" th:attr="data-total=${request.booking.totalAmount}">
+                              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                              <div class="modal-header">
+                                <h5 class="modal-title">Approve Cancellation</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                              </div>
+                              <div class="modal-body">
+                                <p>Total Paid: <strong>LKR <span th:text="${request.booking.totalAmount}"></span></strong></p>
+                                <div class="refund-buttons mb-3">
+                                  <button type="button" class="btn btn-outline-secondary" data-percent="0">0%</button>
+                                  <button type="button" class="btn btn-outline-secondary" data-percent="25">25%</button>
+                                  <button type="button" class="btn btn-outline-secondary" data-percent="50">50%</button>
+                                  <button type="button" class="btn btn-outline-secondary" data-percent="75">75%</button>
+                                  <button type="button" class="btn btn-outline-secondary" data-percent="100">100%</button>
+                                </div>
+                                <label class="form-label">Refund Amount</label>
+                                <input type="number" name="refundAmount" class="refundAmount form-control mb-3" min="0" th:max="${request.booking.totalAmount}" step="0.01" required>
+                                <label class="form-label">Admin Note</label>
+                                <textarea name="adminNote" class="form-control" rows="3" maxlength="500"></textarea>
+                              </div>
+                              <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="approve-cancellation-btn btn btn-success">Approve Cancellation</button>
+                              </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Reject Modal -->
+                    <div class="modal fade" th:id="'rejectModal' + ${request.id}" tabindex="-1">
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form class="reject-cancellation-form" th:action="@{/admin/bookings/cancellations/{id}/reject(id=${request.id})}" method="post">
+                              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                              <div class="modal-header">
+                                <h5 class="modal-title">Reject Cancellation</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                              </div>
+                              <div class="modal-body">
+                                <p>Are you sure you want to reject this cancellation? The booking will be restored to confirmed status.</p>
+                                <div class="mb-3">
+                                    <label class="form-label">Rejection Reason</label>
+                                    <textarea name="reason" class="form-control" rows="3" maxlength="500" required></textarea>
+                                </div>
+                              </div>
+                              <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-danger">Reject Cancellation</button>
+                              </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(requests)}"><td colspan="6" class="text-center text-muted">No pending cancellation requests found.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/admin-sidebar.js}"></script>
+<script>
+document.querySelectorAll(".approve-refund-form").forEach(form => {
+  const total = parseFloat(form.dataset.total) || 0;
+  const input = form.querySelector(".refundAmount");
+
+  form.querySelectorAll("[data-percent]").forEach(button => {
+    button.addEventListener("click", function () {
+      const percentage = parseFloat(this.dataset.percent);
+      input.value = (total * percentage / 100).toFixed(2);
+    });
+  });
+
+  form.addEventListener("submit", function (event) {
+    const approveButton = form.querySelector(".approve-cancellation-btn");
+
+    if (approveButton.disabled) {
+      event.preventDefault();
+      return;
+    }
+
+    approveButton.disabled = true;
+    approveButton.textContent = "Approving...";
+  });
+});
+</script>
+</body>
+</html>

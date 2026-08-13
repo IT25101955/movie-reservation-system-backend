@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Select Seats | CineMax</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background:#111; color:#fff; }
+        .screen { max-width:720px; margin:28px auto 35px; padding:12px; background:#fff; color:#111; text-align:center; box-shadow:0 12px 28px rgba(255,255,255,.2); }
+        .ticket-prices { display:flex; gap:12px; flex-wrap:wrap; margin:20px 0; }
+        .price-item { padding:12px 18px; border:1px solid #555; border-radius:8px; display:flex; flex-direction:column; }
+        .cinema-seat-map { max-width:720px; margin:auto; }
+        .seat-row { display:flex; align-items:center; gap:14px; margin:12px 0; }
+        .row-label { width:52px; text-align:center; font-weight:700; color:#bbb; }
+        .vip-row .row-label { color:#f0c75e; }
+        .vip-row-badge { display:block; font-size:10px; color:#f0c75e; }
+        .row-seats { display:flex; gap:10px; flex-wrap:wrap; }
+        .seat { min-width:52px; height:44px; border-radius:7px; cursor:pointer; font-weight:600; }
+        .standard-seat { border:2px solid #777; background:#fff; color:#111; }
+        .vip-seat { border:2px solid #b8860b; background:#fff4c2; color:#664d03; }
+        .selected-seat { background:#198754 !important; color:#fff !important; border-color:#198754 !important; }
+        .booked-seat, .held-seat { opacity:.35; cursor:not-allowed; }
+        .selection-summary { margin-top:35px; padding:24px; border:1px solid #555; border-radius:12px; }
+        .selected-seat-row { display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid #444; }
+        .ticket-label { margin-left:12px; color:#bbb; }
+        .summary-footer > div { display:flex; justify-content:space-between; margin-top:14px; }
+        .total-row { font-size:20px; padding-top:15px; border-top:2px solid #555; }
+        .ticket-modal { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.6); z-index:1000; }
+        .ticket-modal-box { width:min(90%,400px); padding:25px; border-radius:12px; background:#fff; color:#111; }
+        .ticket-modal-box button { width:100%; padding:12px; margin-top:10px; }
+        #continuePaymentButton { width:100%; margin-top:20px; padding:14px; }
+    </style>
+    <link rel="stylesheet" th:href="@{/css/cinemax-ui.css}">
+</head>
+<body>
+<div th:replace="~{fragments/site-header :: header}"></div>
+<div class="booking-progress" aria-label="Booking progress"><div class="booking-step done">Movie</div><div class="booking-step done">Showtime</div><div class="booking-step current">Seats</div><div class="booking-step ">Payment</div><div class="booking-step ">Ticket</div></div>
+<main class="container py-5">
+    <h2 th:text="${show.movie.title}"></h2>
+    <p><span th:text="${show.theatre.name}"></span> - <span th:text="${show.theatre.location}"></span></p>
+    <p><span th:text="${show.showDate}"></span> at <span th:text="${show.startTime}"></span></p>
+
+    <div th:if="${bookingError}" class="alert alert-danger" th:text="${bookingError}"></div>
+    <div th:if="${param.error}" class="alert alert-danger">Unable to continue with the selected seats. Please try again.</div>
+    <div th:if="${param.expired}" class="alert alert-warning">Your previous seat hold expired. Please select again.</div>
+
+    <div class="ticket-prices">
+        <div class="price-item"><span>Adult</span><strong>LKR <span th:text="${#numbers.formatDecimal(adultPrice, 1, 2)}">0.00</span></strong></div>
+        <div class="price-item"><span>Child</span><strong>LKR <span th:text="${#numbers.formatDecimal(childPrice, 1, 2)}">0.00</span></strong></div>
+        <div class="price-item"><span>VIP</span><strong>LKR <span th:text="${#numbers.formatDecimal(vipPrice, 1, 2)}">0.00</span></strong></div>
+    </div>
+
+    <div class="cinema-seat-map">
+        <div class="screen">SCREEN</div>
+        <div th:each="rowEntry : ${seatsByRow}" class="seat-row"
+             th:classappend="${!rowEntry.value.isEmpty() and rowEntry.value[0].seatCategory.name() == 'VIP' ? ' vip-row' : ' standard-row'}">
+            <div class="row-label">
+                <span th:text="${rowEntry.key}">A</span>
+                <span th:if="${!rowEntry.value.isEmpty() and rowEntry.value[0].seatCategory.name() == 'VIP'}" class="vip-row-badge">VIP</span>
+            </div>
+            <div class="row-seats">
+                <button type="button" th:each="seat : ${rowEntry.value}" class="seat"
+                        th:classappend="${bookedSeatIds.contains(seat.id) ? ' booked-seat' : (otherHeldSeatIds.contains(seat.id) ? ' held-seat' : (seat.seatCategory.name() == 'VIP' ? ' vip-seat' : ' standard-seat'))}"
+                        th:disabled="${bookedSeatIds.contains(seat.id) || otherHeldSeatIds.contains(seat.id)}"
+                        th:data-seat-id="${seat.id}" th:data-seat-code="${seat.seatCode}"
+                        th:data-category="${seat.seatCategory}" th:data-adult-price="${#numbers.formatDecimal(adultPrice,1,2)}" th:data-child-price="${#numbers.formatDecimal(childPrice,1,2)}" th:data-vip-price="${#numbers.formatDecimal(vipPrice,1,2)}" th:text="${seat.seatCode}"></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-3 justify-content-center mt-4 text-muted">
+        <span>□ Standard</span><span>▣ VIP</span><span style="color:#477976">■ Selected</span><span>■ Booked/Held</span>
+    </div>
+
+    <section class="selection-summary">
+        <h3>Selected Seats</h3>
+        <div id="selectedSeatList"><p id="noSeatsMessage">No seats selected.</p></div>
+        <div class="summary-footer">
+            <div><span>Selected Seats:</span><strong id="selectedSeatCount">0</strong></div>
+            <div class="total-row"><span>Total</span><strong>LKR <span id="totalAmount">0.00</span></strong></div>
+        </div>
+        <form th:action="@{/booking/show/{id}/hold(id=${show.id})}" method="post" id="seatBookingForm">
+            <input type="hidden" name="seatSelectionsJson" id="seatSelectionsJson">
+            <button type="submit" id="continuePaymentButton" class="btn btn-success" disabled>Continue to Booking Confirmation</button>
+        </form>
+    </section>
+</main>
+
+<div id="ticketTypeModal" class="ticket-modal">
+    <div class="ticket-modal-box">
+        <h4 id="ticketSeatTitle">Select Ticket Type</h4>
+        <button type="button" id="adultTicketButton" class="btn btn-dark">Adult - LKR <span th:text="${#numbers.formatDecimal(adultPrice, 1, 2)}">0.00</span></button>
+        <button type="button" id="childTicketButton" class="btn btn-outline-dark">Child - LKR <span th:text="${#numbers.formatDecimal(childPrice, 1, 2)}">0.00</span></button>
+        <button type="button" id="cancelTicketButton" class="btn btn-link">Cancel</button>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const adultPrice = Number(/*[[${adultPrice}]]*/ 0);
+    const childPrice = Number(/*[[${childPrice}]]*/ 0);
+    const vipPrice = Number(/*[[${vipPrice}]]*/ 0);
+    const selectedSeats = new Map();
+    let pendingSeatButton = null;
+    const modal = document.getElementById('ticketTypeModal');
+    const selectedSeatList = document.getElementById('selectedSeatList');
+    const continueButton = document.getElementById('continuePaymentButton');
+
+    document.querySelectorAll('.seat').forEach(button => {
+        if (button.disabled) return;
+        button.addEventListener('click', function () {
+            const id = this.dataset.seatId;
+            if (selectedSeats.has(id)) {
+                selectedSeats.delete(id);
+                this.classList.remove('selected-seat');
+                updateSummary();
+                return;
+            }
+            if (this.dataset.category.toUpperCase() === 'VIP') {
+                selectedSeats.set(id, {seatId:Number(id), seatCode:this.dataset.seatCode, ticketType:'VIP', price:vipPrice});
+                this.classList.add('selected-seat');
+                updateSummary();
+                return;
+            }
+            pendingSeatButton = this;
+            document.getElementById('ticketSeatTitle').textContent = `Select Ticket Type for ${this.dataset.seatCode}`;
+            modal.style.display = 'flex';
+        });
+    });
+
+    document.getElementById('adultTicketButton').onclick = () => selectStandardSeat('ADULT', adultPrice);
+    document.getElementById('childTicketButton').onclick = () => selectStandardSeat('CHILD', childPrice);
+    document.getElementById('cancelTicketButton').onclick = closeTicketModal;
+
+    function selectStandardSeat(ticketType, price) {
+        if (!pendingSeatButton) return;
+        const id = pendingSeatButton.dataset.seatId;
+        selectedSeats.set(id, {seatId:Number(id), seatCode:pendingSeatButton.dataset.seatCode, ticketType, price});
+        pendingSeatButton.classList.add('selected-seat');
+        closeTicketModal();
+        updateSummary();
+    }
+
+    function closeTicketModal() { modal.style.display = 'none'; pendingSeatButton = null; }
+
+    function updateSummary() {
+        selectedSeatList.innerHTML = '';
+        let total = 0;
+        selectedSeats.forEach(seat => {
+            total += seat.price;
+            const row = document.createElement('div');
+            row.className = 'selected-seat-row';
+            row.innerHTML = `<div><strong>${seat.seatCode}</strong><span class="ticket-label">${formatTicketType(seat.ticketType)}</span></div><strong>LKR ${formatMoney(seat.price)}</strong>`;
+            selectedSeatList.appendChild(row);
+        });
+        if (!selectedSeats.size) selectedSeatList.innerHTML = '<p>No seats selected.</p>';
+        document.getElementById('selectedSeatCount').textContent = selectedSeats.size;
+        document.getElementById('totalAmount').textContent = formatMoney(total);
+        document.getElementById('seatSelectionsJson').value = JSON.stringify(Array.from(selectedSeats.values()).map(seat => ({seatId:seat.seatId, ticketType:seat.ticketType})));
+        continueButton.disabled = !selectedSeats.size;
+    }
+
+    function formatTicketType(type) { return type === 'ADULT' ? 'Adult' : type === 'CHILD' ? 'Child' : 'VIP'; }
+    function formatMoney(amount) { return Number(amount).toLocaleString('en-LK', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+</script>
+<div th:replace="~{fragments/site-footer :: footer}"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/cinemax-ui.js}"></script>
+</body>
+</html>

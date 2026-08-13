@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<header th:fragment="header" class="cinemax-site-header">
+  <nav class="navbar navbar-expand-lg cinemax-nav">
+    <div class="container">
+      <a class="cinemax-brand" th:href="@{/}"><span class="cinemax-brand-mark">C</span><span>CineMax</span></a>
+      <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#cinemaxMainNav" aria-controls="cinemaxMainNav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+      <div class="collapse navbar-collapse" id="cinemaxMainNav">
+        <div class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
+          <a class="nav-link" th:href="@{/}">Home</a>
+          <a class="nav-link" th:href="@{/movies}">Movies</a>
+          <a class="nav-link" sec:authorize="isAuthenticated()" th:href="@{/account/bookings}">My Bookings</a>
+          <a class="nav-link" sec:authorize="isAuthenticated()" th:href="@{/account/notifications}">Notifications</a>
+          <div class="dropdown ms-lg-1" sec:authorize="isAuthenticated()">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">Account</button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" th:href="@{/customer/dashboard}">Dashboard</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><form th:action="@{/logout}" method="post" class="px-2"><button type="submit" class="btn btn-link text-decoration-none p-1" data-keep-label="true">Logout</button></form></li>
+            </ul>
+          </div>
+          <a class="btn btn-outline-secondary ms-lg-1" sec:authorize="!isAuthenticated()" th:href="@{/login}">Login</a>
+          <a class="btn btn-danger ms-lg-1" sec:authorize="!isAuthenticated()" th:href="@{/register}">Create Account</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+</body></html>

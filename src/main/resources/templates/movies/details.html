@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+
+    <title>CineMax Movies</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <style>
+        .booking-field {
+            margin-top: 30px;
+            margin-bottom: 30px;
+        }
+
+        .booking-field label {
+            display: block;
+            margin-bottom: 12px;
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        .booking-select {
+            width: 100%;
+            min-height: 58px;
+            padding: 0 18px;
+            border: 1px solid #ccc;
+            border-radius: 9px;
+            background: white;
+            font-size: 18px;
+            cursor: pointer;
+            color: #333;
+        }
+
+        .booking-select:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* AVAILABLE SHOWS */
+
+        .available-shows-section {
+            margin-top: 35px;
+        }
+
+        .available-shows-section h2 {
+            margin-bottom: 22px;
+        }
+
+        /* THEATRE */
+
+        .theatre-show-card {
+            margin-bottom: 22px;
+            padding: 22px;
+            border: 1px solid #555;
+            border-radius: 12px;
+        }
+
+        .theatre-name {
+            margin: 0 0 18px;
+            font-size: 20px;
+        }
+
+        /* SHOW TIMES */
+
+        .show-time-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .show-time-button {
+            min-width: 125px;
+            padding: 12px 18px;
+            border: 1px solid #aaa;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            color: #333;
+        }
+
+        .show-start-time {
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+        .show-time-range {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .show-time-button:hover {
+            transform: translateY(-1px);
+        }
+
+        .no-shows-message,
+        .loading-shows {
+            padding: 20px;
+            border: 1px solid #555;
+            border-radius: 10px;
+        }
+    </style>
+
+    <link rel="stylesheet" th:href="@{/css/cinemax-ui.css}">
+</head>
+
+<body class="bg-dark text-white">
+<div th:replace="~{fragments/site-header :: header}"></div>
+
+
+<div class="container py-5">
+
+    <a th:href="@{/movies}"
+       class="btn btn-outline-light mb-4">
+
+        ← Movies
+
+    </a>
+
+
+    <div class="row">
+
+        <div class="col-md-4">
+
+            <img
+                th:if="${movie.posterUrl != null && !movie.posterUrl.isEmpty()}"
+                th:src="${movie.posterUrl}"
+                class="img-fluid rounded"
+                alt="Movie Poster">
+
+        </div>
+
+
+        <div class="col-md-8">
+
+            <h1 th:text="${movie.title}">
+            </h1>
+
+
+            <p>
+                <strong>Genre:</strong>
+
+                <span th:text="${movie.genre}">
+                </span>
+            </p>
+
+
+            <p>
+                <strong>Language:</strong>
+
+                <span th:text="${movie.language}">
+                </span>
+            </p>
+
+
+            <p>
+                <strong>Duration:</strong>
+
+                <span th:text="${movie.durationMinutes}">
+                </span>
+
+                minutes
+            </p>
+
+
+            <p>
+                <strong>Cast:</strong>
+
+                <span th:text="${movie.cast}">
+                </span>
+            </p>
+
+
+            <p th:text="${movie.description}">
+            </p>
+
+
+            <hr>
+
+
+            <section class="booking-section">
+                <h3 class="mb-3">Book This Movie</h3>
+                <label for="movieSelect" class="form-label">Select Movie</label>
+                <select id="movieSelect" class="form-select mb-4">
+                    <option value="">Select a movie</option>
+                    <option th:each="availableMovie : ${movies}"
+                            th:value="${availableMovie.id}"
+                            th:text="${availableMovie.title}"
+                            th:selected="${availableMovie.id == movie.id}"></option>
+                </select>
+
+                <!-- SELECT DATE -->
+                <div id="dateSection" style="display:none;" class="booking-field">
+
+                    <label for="dateSelect">
+                        Select Date
+                    </label>
+
+                    <select
+                        id="dateSelect"
+                        class="booking-select"
+                        disabled>
+
+                        <option value="">
+                            Select a date
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- AVAILABLE SHOWS -->
+                <div
+                    id="showSection"
+                    style="display:none;"
+                    class="available-shows-section">
+
+                    <h2 id="availableShowsTitle">
+                        Available Shows
+                    </h2>
+
+                    <div id="availableShows">
+                    </div>
+
+                </div>
+            </section>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+const movieSelect =
+    document.getElementById("movieSelect");
+
+const dateSection =
+    document.getElementById("dateSection");
+
+const dateSelect =
+    document.getElementById("dateSelect");
+
+const showSection =
+    document.getElementById("showSection");
+
+const availableShows =
+    document.getElementById("availableShows");
+
+const availableShowsTitle =
+    document.getElementById("availableShowsTitle");
+
+
+/*
+ * ========================================
+ * MOVIE CHANGED
+ * ========================================
+ */
+movieSelect.addEventListener(
+    "change",
+    async function () {
+
+        const movieId = this.value;
+
+
+        /*
+         * Reset old selections
+         */
+        resetDateAndShows();
+
+
+        if (!movieId) {
+
+            dateSection.style.display =
+                "none";
+
+            return;
+        }
+
+
+        dateSection.style.display =
+            "block";
+
+        dateSelect.disabled = true;
+
+        dateSelect.innerHTML = `
+            <option value="">
+                Loading available dates...
+            </option>
+        `;
+
+
+        try {
+
+            /*
+             * Get only dates that actually
+             * have available shows.
+             */
+            const response = await fetch(
+                `/api/customer/movies/${movieId}/dates`
+            );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "Unable to load dates."
+                );
+
+            }
+
+
+            const dates =
+                await response.json();
+
+
+            /*
+             * Reset dropdown
+             */
+            dateSelect.innerHTML = `
+                <option value="">
+                    Select a date
+                </option>
+            `;
+
+
+            /*
+             * No available shows
+             */
+            if (
+                !dates
+                ||
+                dates.length === 0
+            ) {
+
+                dateSelect.innerHTML = `
+                    <option value="">
+                        No available dates
+                    </option>
+                `;
+
+                dateSelect.disabled =
+                    true;
+
+                return;
+            }
+
+
+            /*
+             * Add available dates
+             * to dropdown.
+             */
+            dates.forEach(date => {
+
+                const option =
+                    document.createElement(
+                        "option"
+                    );
+
+                option.value =
+                    date;
+
+                option.textContent =
+                    formatDate(date);
+
+                dateSelect.appendChild(
+                    option
+                );
+
+            });
+
+
+            dateSelect.disabled =
+                false;
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            dateSelect.innerHTML = `
+                <option value="">
+                    Unable to load dates
+                </option>
+            `;
+
+            dateSelect.disabled =
+                true;
+
+        }
+
+    }
+);
+
+
+/*
+ * ========================================
+ * DATE CHANGED
+ * ========================================
+ */
+dateSelect.addEventListener(
+    "change",
+    function () {
+
+        const movieId =
+            movieSelect.value;
+
+        const selectedDate =
+            this.value;
+
+
+        /*
+         * Customer went back to
+         * "Select a date"
+         */
+        if (
+            !movieId
+            ||
+            !selectedDate
+        ) {
+
+            showSection.style.display =
+                "none";
+
+            availableShows.innerHTML =
+                "";
+
+            return;
+        }
+
+
+        /*
+         * Change heading:
+         *
+         * Available Shows — Mon, Oct 5
+         */
+        availableShowsTitle.textContent =
+            "Available Shows — "
+            + formatDate(selectedDate);
+
+
+        loadShows(
+            movieId,
+            selectedDate
+        );
+
+    }
+);
+
+
+/*
+ * ========================================
+ * LOAD SHOWS
+ * ========================================
+ */
+async function loadShows(
+        movieId,
+        selectedDate) {
+
+    showSection.style.display =
+        "block";
+
+    availableShows.innerHTML = `
+        <p class="loading-shows">
+            Loading available shows...
+        </p>
+    `;
+
+
+    try {
+
+        const response = await fetch(
+            `/api/customer/movies/${movieId}/shows?date=${selectedDate}`
+        );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Unable to load shows."
+            );
+
+        }
+
+
+        const shows =
+            await response.json();
+
+
+        availableShows.innerHTML =
+            "";
+
+
+        /*
+         * No shows on selected date
+         */
+        if (
+            !shows
+            ||
+            shows.length === 0
+        ) {
+
+            availableShows.innerHTML = `
+                <div class="no-shows-message">
+
+                    No available shows
+                    for this date.
+
+                </div>
+            `;
+
+            return;
+        }
+
+
+        /*
+         * Group shows by theatre
+         */
+        const groupedShows = {};
+
+
+        shows.forEach(show => {
+
+            const theatreName =
+                show.theatreName
+                || "Theatre";
+
+
+            if (
+                !groupedShows[
+                    theatreName
+                ]
+            ) {
+
+                groupedShows[
+                    theatreName
+                ] = [];
+
+            }
+
+
+            groupedShows[
+                theatreName
+            ].push(show);
+
+        });
+
+
+        /*
+         * Display Theatre +
+         * available show times
+         */
+        Object.entries(
+            groupedShows
+        ).forEach(
+            ([theatreName, theatreShows]) => {
+
+                const theatreCard =
+                    document.createElement(
+                        "div"
+                    );
+
+                theatreCard.className =
+                    "theatre-show-card";
+
+
+                /*
+                 * Theatre name
+                 */
+                const theatreTitle =
+                    document.createElement(
+                        "h3"
+                    );
+
+                theatreTitle.className =
+                    "theatre-name";
+
+                theatreTitle.textContent =
+                    theatreName;
+
+
+                theatreCard.appendChild(
+                    theatreTitle
+                );
+
+
+                /*
+                 * Show times
+                 */
+                const timeContainer =
+                    document.createElement(
+                        "div"
+                    );
+
+                timeContainer.className =
+                    "show-time-container";
+
+
+                theatreShows.forEach(
+                    show => {
+
+                        const showButton =
+                            document.createElement(
+                                "button"
+                            );
+
+                        showButton.type =
+                            "button";
+
+                        showButton.className =
+                            "show-time-button";
+
+
+                        showButton.innerHTML = `
+                            <span class="show-start-time">
+                                ${formatTime(
+                                    show.startTime
+                                )}
+                            </span>
+
+                            <span class="show-time-range">
+                                ${formatTime(
+                                    show.startTime
+                                )}
+                                -
+                                ${formatTime(
+                                    show.endTime
+                                )}
+                            </span>
+                        `;
+
+
+                        showButton.addEventListener(
+                            "click",
+                            function () {
+
+                                window.location.href =
+                                    `/booking/seats?showId=${show.showId}`;
+
+                            }
+                        );
+
+
+                        timeContainer
+                            .appendChild(
+                                showButton
+                            );
+
+                    }
+                );
+
+
+                theatreCard
+                    .appendChild(
+                        timeContainer
+                    );
+
+
+                availableShows
+                    .appendChild(
+                        theatreCard
+                    );
+
+            }
+        );
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        availableShows.innerHTML = `
+            <div class="no-shows-message">
+
+                Unable to load available shows.
+
+            </div>
+        `;
+
+    }
+
+}
+
+
+/*
+ * ========================================
+ * RESET
+ * ========================================
+ */
+function resetDateAndShows() {
+
+    dateSelect.innerHTML = `
+        <option value="">
+            Select a date
+        </option>
+    `;
+
+    dateSelect.disabled =
+        true;
+
+
+    showSection.style.display =
+        "none";
+
+    availableShows.innerHTML =
+        "";
+
+    availableShowsTitle.textContent =
+        "Available Shows";
+
+}
+
+
+/*
+ * ========================================
+ * DATE FORMAT
+ *
+ * 2026-10-05
+ * →
+ * Mon, Oct 5
+ * ========================================
+ */
+function formatDate(
+        dateString) {
+
+    const parts =
+        dateString.split("-");
+
+
+    const date =
+        new Date(
+            Number(parts[0]),
+            Number(parts[1]) - 1,
+            Number(parts[2])
+        );
+
+
+    return date.toLocaleDateString(
+        "en-US",
+        {
+            weekday:
+                "short",
+
+            month:
+                "short",
+
+            day:
+                "numeric"
+        }
+    );
+
+}
+
+
+/*
+ * ========================================
+ * TIME FORMAT
+ *
+ * 19:00:00
+ * →
+ * 7:00 PM
+ * ========================================
+ */
+function formatTime(
+        timeString) {
+
+    if (!timeString) {
+        return "";
+    }
+
+
+    const parts =
+        timeString.split(":");
+
+    let hour =
+        Number(parts[0]);
+
+    const minute =
+        parts[1];
+
+    const period =
+        hour >= 12
+            ? "PM"
+            : "AM";
+
+
+    hour =
+        hour % 12;
+
+    if (hour === 0) {
+        hour = 12;
+    }
+
+
+    return `${hour}:${minute} ${period}`;
+
+}
+
+/* Automatically trigger change event if a movie is selected */
+if (movieSelect && movieSelect.value) {
+    movieSelect.dispatchEvent(new Event("change"));
+}
+
+</script>
+
+
+<hr class="my-5">
+
+
+<div
+    th:if="${successMessage}"
+    class="alert alert-success">
+
+    <span th:text="${successMessage}"></span>
+
+</div>
+
+<div
+    th:if="${errorMessage}"
+    class="alert alert-danger"
+    th:text="${errorMessage}">
+</div>
+
+
+<div
+    th:if="${param.noBooking}"
+    class="alert alert-warning">
+
+    <strong>Review not available.</strong>
+
+    You cannot add a review because you have not
+    watched this movie yet. Please make a confirmed
+    booking for this movie before adding a review.
+
+</div>
+
+
+<div class="d-flex
+            justify-content-between
+            align-items-center">
+
+
+    <div>
+
+        <h3>
+            Customer Reviews
+        </h3>
+
+
+        <p>
+
+            Average Rating:
+
+            <strong>
+
+                ⭐
+
+                <span
+                    th:text="${#numbers.formatDecimal(
+                        averageRating,
+                        1,
+                        1
+                    )}">
+                </span>
+
+                / 5
+
+            </strong>
+
+
+            <span class="text-muted">
+
+                (
+                <span
+                    th:text="${reviewCount}">
+                </span>
+
+                reviews)
+
+            </span>
+
+        </p>
+
+    </div>
+
+
+    <a
+        sec:authorize="hasRole('CUSTOMER')"
+        th:href="@{/reviews/movie/{id}/add(id=${movie.id})}"
+        class="btn btn-warning">
+
+        ⭐ Rate & Review
+
+    </a>
+
+</div>
+
+
+<div
+    th:if="${#lists.isEmpty(reviews)}"
+    class="alert alert-secondary">
+
+    No reviews yet.
+
+</div>
+
+
+<div
+    class="card bg-secondary text-white mb-3"
+    th:each="review : ${reviews}">
+
+    <div class="card-body">
+
+
+        <div
+            class="d-flex
+                   justify-content-between">
+
+
+            <strong
+                th:text="${review.user.fullName}">
+            </strong>
+
+
+            <span>
+
+                ⭐
+                <span
+                    th:text="${review.rating}">
+                </span>
+
+                / 5
+
+            </span>
+
+        </div>
+
+
+        <p
+            class="mt-3"
+            th:text="${review.comment}">
+        </p>
+
+
+        <small
+            th:text="${review.createdAt}">
+        </small>
+
+        <form
+            th:if="${currentUser != null and review.user.id == currentUser.id}"
+            th:action="@{/reviews/{id}/delete(id=${review.id})}"
+            method="post"
+            class="mt-3">
+
+            <input
+                type="hidden"
+                name="movieId"
+                th:value="${movie.id}">
+
+            <button
+                type="submit"
+                class="btn btn-sm btn-outline-light"
+                onclick="return confirm('Are you sure you want to permanently delete this review?')">
+                Delete Review
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div th:replace="~{fragments/site-footer :: footer}"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/cinemax-ui.js}"></script>
+</body>
+</html>

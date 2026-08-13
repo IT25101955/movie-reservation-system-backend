@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+    <title>Payment Successful | CineMax</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <link rel="stylesheet" th:href="@{/css/cinemax-ui.css}">
+</head>
+
+
+<body class="bg-dark text-white">
+<div th:replace="~{fragments/site-header :: header}"></div>
+<div class="booking-progress" aria-label="Booking progress"><div class="booking-step done">Movie</div><div class="booking-step done">Showtime</div><div class="booking-step done">Seats</div><div class="booking-step done">Payment</div><div class="booking-step current">Ticket</div></div>
+
+
+<div class="container py-5 text-center">
+
+    <div
+        class="card mx-auto shadow"
+        style="max-width:650px">
+
+        <div class="card-body p-5 text-dark">
+
+
+            <h1 class="text-success">
+                ✓ Payment Successful
+            </h1>
+
+
+            <p>
+                Your CineMax booking has been confirmed.
+            </p>
+
+
+            <hr>
+
+
+            <p>
+
+                <strong>Booking Reference:</strong>
+
+                <span
+                    th:text="${payment.booking.bookingReference}">
+                </span>
+
+            </p>
+
+
+            <p>
+
+                <strong>Transaction:</strong>
+
+                <span
+                    th:text="${payment.transactionReference}">
+                </span>
+
+            </p>
+
+
+            <p>
+
+                <strong>Amount:</strong>
+
+                Rs.
+
+                <span
+                    th:text="${payment.amount}">
+                </span>
+
+            </p>
+
+
+            <p>
+
+                <strong>Booking Status:</strong>
+
+                <span
+                    class="badge bg-success"
+                    th:text="${payment.booking.status}">
+                </span>
+
+            </p>
+
+
+            <div class="alert alert-info">
+
+                Your electronic ticket has been generated successfully.
+
+            </div>
+
+
+            <a
+                th:href="@{/account/bookings/{id}(id=${payment.booking.id})}"
+                class="btn btn-success">
+
+                View Booking & Ticket
+
+            </a>
+
+            
+
+        </div>
+
+    </div>
+
+</div>
+
+<div th:replace="~{fragments/site-footer :: footer}"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/cinemax-ui.js}"></script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Create Shows | CineMax</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/admin-sidebar.css}">
+</head>
+<body class="bg-light">
+<div class="admin-layout">
+<button type="button" id="adminMenuButton" class="admin-menu-button">☰</button>
+<div th:replace="~{fragments/admin-sidebar :: sidebar('shows')}"></div>
+<main class="admin-main-content">
+<main class="container py-5">
+    <div class="card shadow mx-auto" style="max-width: 800px">
+        <div class="card-body">
+            <h2>Create Shows</h2>
+            <div th:if="${scheduleError}" class="alert alert-danger" th:text="${scheduleError}"></div>
+            <form th:action="@{/admin/shows/save}" th:object="${showBatch}" method="post">
+                <div class="mb-3">
+                    <label class="form-label">Movie</label>
+                    <select id="movie" class="form-select" th:field="*{movieId}" required>
+                        <option value="">Select Movie</option>
+                        <option th:each="movie : ${movies}" th:value="${movie.id}" th:text="${movie.title}"
+                                th:attr="data-duration=${movie.durationMinutes}"></option>
+                    </select>
+                    <div class="text-danger" th:errors="*{movieId}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Theatre</label>
+                    <select class="form-select" th:field="*{theatreId}" required>
+                        <option value="">Select Theatre</option>
+                        <option th:each="theatre : ${theatres}" th:value="${theatre.id}"
+                                th:text="${theatre.name + ' - ' + theatre.location}"></option>
+                    </select>
+                    <div class="text-danger" th:errors="*{theatreId}"></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">From Date</label>
+                        <input type="date" class="form-control" th:field="*{startDate}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">To Date</label>
+                        <input type="date" class="form-control" th:field="*{endDate}" required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Adult Price (LKR)</label>
+                        <input type="number" min="0.01" step="0.01" class="form-control" th:field="*{adultPrice}" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Child Price (LKR)</label>
+                        <input type="number" min="0.01" step="0.01" class="form-control" th:field="*{childPrice}" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">VIP Price (LKR)</label>
+                        <input type="number" min="0.01" step="0.01" class="form-control" th:field="*{vipPrice}" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Show Times</label>
+                    <div id="times"></div>
+                    <button type="button" id="addShowTime" class="btn btn-outline-primary mt-2">+ Add Show Time</button>
+                    <div class="text-danger" th:errors="*{startTimes}"></div>
+                </div>
+                <p id="summary" class="text-muted"></p>
+                <button class="btn btn-primary">Save All Shows</button>
+                <a th:href="@{/admin/shows}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</main>
+</main>
+</div>
+<script>
+    const times = document.getElementById('times');
+    const movie = document.getElementById('movie');
+    const startDate = document.querySelector('[name="startDate"]');
+    const endDate = document.querySelector('[name="endDate"]');
+
+    function updateEnd(row) {
+        const input = row.querySelector('.start-time');
+        const output = row.querySelector('.end-time');
+        const option = movie.options[movie.selectedIndex];
+        if (!input.value || !option || !option.dataset.duration) {
+            output.textContent = '--:--';
+            return;
+        }
+        const parts = input.value.split(':');
+        const date = new Date(2000, 0, 1, Number(parts[0]), Number(parts[1]));
+        date.setMinutes(date.getMinutes() + Number(option.dataset.duration));
+        output.textContent = date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+    }
+
+    function updateSummary() {
+        const from = startDate.value ? new Date(startDate.value) : null;
+        const to = endDate.value ? new Date(endDate.value) : null;
+        const days = from && to ? Math.max(0, Math.round((to - from) / 86400000) + 1) : 0;
+        document.getElementById('summary').textContent =
+            days + ' days x ' + times.querySelectorAll('.show-time-row').length + ' showtimes';
+    }
+
+    function addTime(value = '') {
+        const row = document.createElement('div');
+        row.className = 'show-time-row d-flex align-items-center gap-3 mb-2';
+        row.innerHTML = '<input type="time" name="startTimes" class="start-time form-control" required>'
+            + '<span class="end-time text-muted">--:--</span>'
+            + '<button type="button" class="remove-time btn btn-outline-danger">Remove</button>';
+        const input = row.querySelector('.start-time');
+        input.value = value;
+        input.addEventListener('input', () => updateEnd(row));
+        row.querySelector('.remove-time').addEventListener('click', () => { row.remove(); updateSummary(); });
+        times.appendChild(row);
+        updateEnd(row);
+        updateSummary();
+    }
+
+    document.getElementById('addShowTime').addEventListener('click', () => addTime());
+    movie.addEventListener('change', () => times.querySelectorAll('.show-time-row').forEach(updateEnd));
+    startDate.addEventListener('change', updateSummary);
+    endDate.addEventListener('change', updateSummary);
+    addTime('10:00');
+    addTime('14:00');
+    addTime('19:00');
+</script>
+<script th:src="@{/js/admin-sidebar.js}"></script>
+</body>
+</html>

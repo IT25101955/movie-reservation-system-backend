@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+
+    <title>Confirm Booking | CineMax</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <link rel="stylesheet" th:href="@{/css/cinemax-ui.css}">
+</head>
+
+
+<body class="bg-dark text-white">
+<div th:replace="~{fragments/site-header :: header}"></div>
+<div class="booking-progress" aria-label="Booking progress"><div class="booking-step done">Movie</div><div class="booking-step done">Showtime</div><div class="booking-step done">Seats</div><div class="booking-step current">Payment</div><div class="booking-step ">Ticket</div></div>
+
+
+<div class="container py-5">
+
+    <div
+        class="card bg-secondary text-white shadow mx-auto"
+        style="max-width:750px">
+
+
+        <div class="card-body p-4">
+
+
+            <h2>
+                Confirm Your Booking
+            </h2>
+
+
+            <div class="alert alert-warning mt-3">
+
+                Your seats are held for:
+
+                <strong id="timer">
+                    15:00
+                </strong>
+
+            </div>
+
+
+            <h4
+                th:text="${show.movie.title}">
+            </h4>
+
+
+            <p>
+
+                <strong>Theatre:</strong>
+
+                <span
+                    th:text="${show.theatre.name}">
+                </span>
+
+            </p>
+
+
+            <p>
+
+                <strong>Theatre:</strong>
+
+                <span
+                    th:text="${show.theatre.name}">
+                </span>
+
+            </p>
+
+
+            <p>
+
+                <strong>Date:</strong>
+
+                <span
+                    th:text="${show.showDate}">
+                </span>
+
+            </p>
+
+
+            <p>
+
+                <strong>Time:</strong>
+
+                <span
+                    th:text="${show.startTime}">
+                </span>
+
+            </p>
+
+
+            <p>
+
+                <strong>Seats:</strong>
+
+                <span
+                    th:each="hold, stat : ${holds}">
+
+                    <span
+                        th:text="${hold.seat.seatCode}">
+                    </span>
+
+                    <span
+                        th:unless="${stat.last}">
+                        ,
+                    </span>
+
+                </span>
+
+            </p>
+
+
+            <h4>
+
+                Total:
+                Rs.
+
+                <span th:text="${total}">
+                </span>
+
+            </h4>
+
+
+            <form
+                id="confirmBookingForm"
+                th:action="@{/booking/confirm}"
+                method="post"
+                class="d-inline">
+
+                <input
+                    type="hidden"
+                    name="showId"
+                    th:value="${show.id}">
+
+                <button
+                    id="confirmBookingButton"
+                    type="submit"
+                    class="btn btn-success btn-lg">
+
+                    Confirm & Continue to Payment
+
+                </button>
+
+            </form>
+
+
+            <form
+                th:action="@{/booking/cancel-hold}"
+                method="post"
+                class="d-inline">
+
+                <input
+                    type="hidden"
+                    name="showId"
+                    th:value="${show.id}">
+
+                <button
+                    class="btn btn-danger">
+
+                    Cancel
+
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script th:inline="javascript">
+
+    const expiry =
+        /*[[${expiryMillis}]]*/ 0;
+
+    const timer =
+        document.getElementById("timer");
+
+
+    const interval =
+        setInterval(() => {
+
+            const remaining =
+                expiry - Date.now();
+
+
+            if (remaining <= 0) {
+
+                clearInterval(interval);
+
+                timer.textContent =
+                    "Expired";
+
+                window.location.href =
+                    "/booking/show/"
+                    + /*[[${show.id}]]*/ ""
+                    + "/seats?expired";
+
+                return;
+            }
+
+
+            const minutes =
+                Math.floor(
+                    remaining / 60000
+                );
+
+
+            const seconds =
+                Math.floor(
+                    (remaining % 60000)
+                    / 1000
+                );
+
+
+            timer.textContent =
+                String(minutes)
+                    .padStart(2, "0")
+                + ":"
+                + String(seconds)
+                    .padStart(2, "0");
+
+        }, 1000);
+
+</script>
+
+<script>
+    const confirmForm = document.getElementById("confirmBookingForm");
+    const confirmButton = document.getElementById("confirmBookingButton");
+
+    confirmForm.addEventListener("submit", function () {
+        confirmButton.disabled = true;
+        confirmButton.textContent = "Creating booking...";
+    });
+</script>
+
+
+<div th:replace="~{fragments/site-footer :: footer}"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/cinemax-ui.js}"></script>
+</body>
+</html>

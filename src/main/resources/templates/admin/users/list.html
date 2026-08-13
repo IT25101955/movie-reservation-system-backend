@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>User Management | CineMax</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/admin-sidebar.css}">
+</head>
+<body>
+<div class="admin-layout">
+
+    <!-- MOBILE MENU BUTTON -->
+    <button type="button" id="adminMenuButton" class="admin-menu-button">☰</button>
+
+    <!-- SIDEBAR -->
+    <div th:replace="~{fragments/admin-sidebar :: sidebar('users')}"></div>
+
+    <!-- MAIN CONTENT -->
+    <main class="admin-main-content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2>User Management</h2>
+                <p class="text-muted">Manage system users, roles and account access.</p>
+            </div>
+        </div>
+
+        <form method="get" class="row mt-4 mb-4">
+            <div class="col-md-10">
+                <input name="keyword" th:value="${keyword}" class="form-control" placeholder="Search by name or email">
+            </div>
+            <div class="col-md-2"><button class="btn btn-primary w-100">Search</button></div>
+        </form>
+
+        <div th:if="${param.selfDisableError}" class="alert alert-danger">You cannot disable your own administrator account.</div>
+        <div th:if="${param.selfRoleError}" class="alert alert-danger">You cannot remove your own administrator role.</div>
+        <div th:if="${param.roleChanged}" class="alert alert-success">The user role was updated.</div>
+        <div th:if="${param.statusChanged}" class="alert alert-success">The user status was updated.</div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody>
+                        <tr th:each="user : ${users}">
+                            <td th:text="${user.id}"></td>
+                            <td th:text="${user.fullName}"></td>
+                            <td th:text="${user.email}"></td>
+                            <td>
+                                <form th:action="@{/admin/users/{id}/role(id=${user.id})}" method="post" class="d-flex gap-2">
+                                    <select name="role" class="form-select form-select-sm">
+                                        <option th:each="role : ${roles}" th:value="${role}" th:text="${role}" th:selected="${role == user.role}"></option>
+                                    </select>
+                                    <button class="btn btn-sm btn-warning">Update</button>
+                                </form>
+                            </td>
+                            <td>
+                                <span th:if="${user.enabled}" class="badge bg-success">Active</span>
+                                <span th:unless="${user.enabled}" class="badge bg-danger">Disabled</span>
+                            </td>
+                            <td>
+                                <form th:action="@{/admin/users/{id}/toggle(id=${user.id})}" method="post">
+                                    <button class="btn btn-sm" th:classappend="${user.enabled} ? 'btn-danger' : 'btn-success'" th:text="${user.enabled} ? 'Disable' : 'Enable'"></button>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(users)}"><td colspan="6" class="text-center text-muted">No users found.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+</div>
+
+<script th:src="@{/js/admin-sidebar.js}"></script>
+</body>
+</html>

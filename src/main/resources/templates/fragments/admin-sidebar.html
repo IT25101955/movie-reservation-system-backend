@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<body>
+
+<aside
+    th:fragment="sidebar(activePage)"
+    class="admin-sidebar"
+    id="adminSidebar">
+
+    <!-- LOGO -->
+    <div class="sidebar-brand">
+        <div class="brand-icon">
+            🎬
+        </div>
+
+        <div class="brand-text">
+            <div class="brand-name">
+                CineMax
+            </div>
+
+            <div class="brand-subtitle">
+                Administration
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MAIN -->
+    <nav class="sidebar-nav">
+
+        <div class="nav-section-title">
+            MAIN
+        </div>
+
+        <a
+            th:href="@{/admin}"
+            class="sidebar-link"
+            th:classappend="${activePage == 'dashboard'} ? ' active' : ''">
+
+            <span class="sidebar-icon">
+                🏠
+            </span>
+
+            <span class="sidebar-label">
+                Dashboard
+            </span>
+
+        </a>
+
+
+        <!-- MANAGEMENT -->
+
+        <div class="nav-section-title">
+            MANAGEMENT
+        </div>
+
+        <a
+            th:href="@{/admin/users}"
+            class="sidebar-link"
+            th:classappend="${activePage == 'users'} ? ' active' : ''">
+
+            <span class="sidebar-icon">
+                👤
+            </span>
+
+            <span class="sidebar-label">
+                User Management
+            </span>
+
+        </a>
+
+
+        <a
+            th:href="@{/admin/movies}"
+            class="sidebar-link"
+            th:classappend="${activePage == 'movies'} ? ' active' : ''">
+
+            <span class="sidebar-icon">
+                🎬
+            </span>
+
+            <span class="sidebar-label">
+                Movie Management
+            </span>
+
+        </a>
+
+
+        <a
+            th:href="@{/admin/theatres}"
+            class="sidebar-link"
+            th:classappend="${activePage == 'theatres'} ? ' active' : ''">
+
+            <span class="sidebar-icon">
+                🏢
+            </span>
+
+            <span class="sidebar-label">
+                Theatre Management
+            </span>
+
+        </a>
+
+
+        <!-- OPERATIONS -->
+
+        <div class="nav-section-title">
+            OPERATIONS
+        </div>
+
+        <a
+            th:href="@{/admin/shows}"
+            class="sidebar-link"
+            th:classappend="${activePage == 'shows'} ? ' active' : ''">
+
+            <span class="sidebar-icon">
+                📅
+            </span>
+
+            <span class="sidebar-label">
+                Show Scheduling
+            </span>
+
+        </a>
+
+
+        <a
+            th:href="@{/admin/bookings}"
+            class="sidebar-link"
+            th:classappend="${activePage == 'bookings'} ? ' active' : ''">
+
+            <span class="sidebar-icon">
+                🎟
+            </span>
+
+            <span class="sidebar-label">
+                Booking Management
+            </span>
+
+        </a>
+
+        <a
+            th:href="@{/admin/bookings/cancellations}"
+            class="sidebar-link"
+            th:classappend="${activePage == 'cancellations'} ? ' active' : ''">
+
+            <span class="sidebar-icon">
+                ❌
+            </span>
+
+            <span class="sidebar-label">
+                Cancellation Requests
+            </span>
+
+        </a>
+
+
+        <a
+            th:href="@{/admin/payments}"
+            class="sidebar-link"
+            th:classappend="${activePage == 'payments'} ? ' active' : ''">
+
+            <span class="sidebar-icon">
+                💳
+            </span>
+
+            <span class="sidebar-label">
+                Payment Management
+            </span>
+
+        </a>
+
+        <!-- =============================================== -->
+        <!-- NOTIFICATION MANAGEMENT                         -->
+        <!-- =============================================== -->
+
+        <a
+            th:href="@{/admin/notifications}"
+            class="sidebar-link"
+            th:classappend="${activePage == 'notifications'} ? ' active' : ''">
+
+            <span class="sidebar-icon">
+                🔔
+            </span>
+
+            <span class="sidebar-label">
+                Notification Broadcasts
+            </span>
+
+        </a>
+
+
+        <!-- REPORTS -->
+
+        <div class="nav-section-title">
+            REPORTS
+        </div>
+
+        <a
+            th:href="@{/admin/reports}"
+            class="sidebar-link"
+            th:classappend="${activePage == 'reports'} ? ' active' : ''">
+
+            <span class="sidebar-icon">
+                📊
+            </span>
+
+            <span class="sidebar-label">
+                Sales Reports
+            </span>
+
+        </a>
+
+    </nav>
+
+
+    <!-- LOGOUT -->
+
+    <div class="sidebar-footer">
+
+        <form
+            th:action="@{/logout}"
+            method="post">
+
+            <input
+                type="hidden"
+                th:if="${_csrf != null}"
+                th:name="${_csrf.parameterName}"
+                th:value="${_csrf.token}">
+
+            <button
+                type="submit"
+                class="logout-button">
+
+                <span class="sidebar-icon">
+                    🚪
+                </span>
+
+                <span class="logout-label">Logout</span>
+
+            </button>
+
+        </form>
+
+    </div>
+
+</aside>
+
+</body>
+</html>
