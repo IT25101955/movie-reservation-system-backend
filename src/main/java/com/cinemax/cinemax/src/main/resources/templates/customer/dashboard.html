@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Customer Dashboard | CineMax Movies</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #0f1115; color: white; min-height: 100vh; }
+        .navbar { background: #090a0d; border-bottom: 1px solid #2b2d32; }
+        .brand { font-weight: 800; font-size: 24px; }
+        .hero { background: linear-gradient(135deg,#191c22,#111318); border: 1px solid #292c32; border-radius: 22px; padding: 40px; }
+        .stat-card, .action-card { background: #191c22; border: 1px solid #292c32; border-radius: 18px; height: 100%; }
+        .stat-number { font-size: 34px; font-weight: 800; }
+        .action-card { color: white; transition: .2s; }
+        .action-card:hover { transform: translateY(-4px); border-color: #dc3545; }
+        .action-icon { font-size: 35px; }
+        a { text-decoration: none; }
+        .text-muted-custom { color: #a1a5ad; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container py-2">
+        <a class="navbar-brand brand" th:href="@{/movies}">🎬 CineMax Movies</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse" id="navbar"><div class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+            <a class="nav-link" th:href="@{/movies}">Movies</a>
+            <a class="nav-link" th:href="@{/account/bookings}">My Bookings</a>
+            <a class="nav-link" th:href="@{/account/notifications}">Notifications</a>
+            <form th:action="@{/logout}" method="post"><button class="btn btn-outline-light btn-sm ms-lg-3">Logout</button></form>
+        </div></div>
+    </div>
+</nav>
+<main class="container py-5">
+    <section class="hero mb-5"><div class="row align-items-center">
+        <div class="col-lg-8">
+            <p class="text-danger fw-bold mb-2">CUSTOMER DASHBOARD</p>
+            <h1 class="display-5 fw-bold">Welcome back, <span th:text="${user.fullName}">Customer</span> 👋</h1>
+            <p class="text-muted-custom fs-5 mt-3">Discover movies, reserve your favourite seats and manage all your CineMax bookings in one place.</p>
+            <a th:href="@{/movies}" class="btn btn-danger btn-lg mt-2">🎬 Browse Movies</a>
+        </div>
+        <div class="col-lg-4 text-center d-none d-lg-block" style="font-size:120px">🍿</div>
+    </div></section>
+    <h4 class="mb-3">My CineMax</h4>
+    <div class="row g-3 mb-5">
+        <div class="col-md-6 col-lg-3"><div class="card stat-card text-white"><div class="card-body p-4"><div class="text-muted-custom">Total Bookings</div><div class="stat-number" th:text="${totalBookings}">0</div></div></div></div>
+        <div class="col-md-6 col-lg-3"><div class="card stat-card text-white"><div class="card-body p-4"><div class="text-muted-custom">Confirmed</div><div class="stat-number text-success" th:text="${confirmedBookings}">0</div></div></div></div>
+        <div class="col-md-6 col-lg-3"><div class="card stat-card text-white"><div class="card-body p-4"><div class="text-muted-custom">Active Tickets</div><div class="stat-number text-danger" th:text="${activeTickets}">0</div></div></div></div>
+        <div class="col-md-6 col-lg-3"><div class="card stat-card text-white"><div class="card-body p-4"><div class="text-muted-custom">Notifications</div><div class="stat-number text-warning" th:text="${unreadNotifications}">0</div></div></div></div>
+    </div>
+    <h4 class="mb-3">Quick Actions</h4>
+    <div class="row g-4">
+        <div class="col-md-6 col-lg-4"><a th:href="@{/movies}"><div class="card action-card"><div class="card-body p-4"><div class="action-icon mb-3">🎬</div><h4>Browse Movies</h4><p class="text-muted-custom">Explore currently available and upcoming movies.</p></div></div></a></div>
+        <div class="col-md-6 col-lg-4"><a th:href="@{/account/bookings}"><div class="card action-card"><div class="card-body p-4"><div class="action-icon mb-3">🎟</div><h4>My Bookings</h4><p class="text-muted-custom">View your reservations, booking status and tickets.</p></div></div></a></div>
+        <div class="col-md-6 col-lg-4"><a th:href="@{/account/notifications}"><div class="card action-card"><div class="card-body p-4"><div class="action-icon mb-3">🔔</div><h4>Notifications</h4><p class="text-muted-custom">Check booking and ticket notifications.</p></div></div></a></div>
+    </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Register | CineMax Movies</title>
+
+</head>
+
+
+<body>
+
+<h1>🎬 CineMax Movies</h1>
+
+<h2>Create Account</h2>
+
+
+<form th:action="@{/register}"
+      th:object="${user}"
+      method="post">
+
+
+    <div>
+
+        <label>Full Name</label>
+
+        <input type="text"
+               th:field="*{fullName}">
+
+        <p th:if="${#fields.hasErrors('fullName')}"
+           th:errors="*{fullName}">
+        </p>
+
+    </div>
+
+
+    <br>
+
+
+    <div>
+
+        <label>Email</label>
+
+        <input type="email"
+               th:field="*{email}">
+
+        <p th:if="${#fields.hasErrors('email')}"
+           th:errors="*{email}">
+        </p>
+
+    </div>
+
+
+    <br>
+
+
+    <div>
+
+        <label>Phone</label>
+
+        <input type="text"
+               th:field="*{phone}">
+
+    </div>
+
+
+    <br>
+
+
+    <div>
+
+        <label>Password</label>
+
+        <input type="password"
+               th:field="*{password}">
+
+        <p th:if="${#fields.hasErrors('password')}"
+           th:errors="*{password}">
+        </p>
+
+    </div>
+
+
+    <br>
+
+
+    <button type="submit">
+
+        Create Account
+
+    </button>
+
+
+</form>
+
+
+<p>
+    Already have an account?
+
+    <a th:href="@{/login}">
+        Login
+    </a>
+</p>
+
+
+</body>
+</html>

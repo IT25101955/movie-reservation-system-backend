@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>CineMax Movies</title>
+
+</head>
+
+
+<body>
+
+
+<h1>🎬 CineMax Movies</h1>
+
+<h2>Movie Reservation System</h2>
+
+
+<p>
+    Book your favourite movies online.
+</p>
+
+~
+<a th:href="@{/register}">
+    Register
+</a>
+
+&nbsp;
+
+<a th:href="@{/login}">
+    Login
+</a>
+
+&nbsp;
+
+<a th:href="@{/movies}">
+    Browse Movies
+</a>
+
+&nbsp;
+
+<a th:href="@{/account/bookings}">
+    My Bookings
+</a>
+
+&nbsp;
+
+<a th:href="@{/account/notifications}">
+    Notifications
+</a>
+
+
+</body>
+
+</html>
